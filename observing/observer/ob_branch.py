@@ -53,11 +53,12 @@ def fetch_current_repo_state(repo_family, github_client):
                 "branch_name": branch.name,
                 "commit_hash": branch.commit.sha
             })
+
             if f"{repo.owner.login}/{repo.name}/{branch.name}" not in processed_branches:
                 processed_branches.add(f"{repo.owner.login}/{repo.name}/{branch.name}")
             else:
-                print("Warning: Duplicate branch detected.")
-                print(f"Warning: Branch already processed: {f"{repo.owner.login}/{repo.name}/{branch.name}"}")
+                print("Warning[fetch_current_repo_state]: Duplicate branch detected.")
+                print(f"Warning[fetch_current_repo_state]: Branch already processed: {f"{repo.owner.login}/{repo.name}/{branch.name}"}")
 
     return current_state
 
@@ -88,6 +89,8 @@ def compare_states(current_state, previous_state, github_client):
     rebased_branches = []
     current_branch_keys = {(b['repo_owner'], b['repo_name'], b['branch_name']) for b in current_state}
     
+    already_rebased_branches = set() # set to avoid duplicates: repo_owner/repo_name/branch_name
+
     for current_branch in current_state:
         repo_full_name = f"{current_branch['repo_owner']}/{current_branch['repo_name']}"
         repo = github_client.get_repo(repo_full_name)
@@ -118,6 +121,11 @@ def compare_states(current_state, previous_state, github_client):
                         "branch_name": current_branch["branch_name"],
                         "commits": convert_commits(comparison.commits)
                     })
+                    if f"{current_branch['repo_owner']}/{current_branch['repo_name']}/{current_branch['branch_name']}" not in already_rebased_branches:
+                        already_rebased_branches.add(f"{current_branch['repo_owner']}/{current_branch['repo_name']}/{current_branch['branch_name']}")
+                    else:
+                        print("Warning[compare_states]: Duplicate rebased branch detected.")
+                        print(f"Warning[compare_states]: Branch already processed: {f"{current_branch['repo_owner']}/{current_branch['repo_name']}/{current_branch['branch_name']}"}")
                 else:
                     updated_branches.append({
                         "repo_owner": current_branch["repo_owner"],
