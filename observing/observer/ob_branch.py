@@ -38,6 +38,10 @@ def chunk_report(report):
 
 # Fetches the current state of repositories (owner, name, branch, commit hash).
 def fetch_current_repo_state(repo_family, github_client):
+
+    # tracking already processed branches
+    processed_branches = set() # set to avoid duplicates: repo_owner/repo_name/branch_name
+
     current_state = []
     for repo_full_name in repo_family:
         repo = github_client.get_repo(repo_full_name)
@@ -49,6 +53,12 @@ def fetch_current_repo_state(repo_family, github_client):
                 "branch_name": branch.name,
                 "commit_hash": branch.commit.sha
             })
+            if f"{repo.owner.login}/{repo.name}/{branch.name}" not in processed_branches:
+                processed_branches.add(f"{repo.owner.login}/{repo.name}/{branch.name}")
+            else:
+                print("Warning: Duplicate branch detected.")
+                print(f"Warning: Branch already processed: {f"{repo.owner.login}/{repo.name}/{branch.name}"}")
+
     return current_state
 
 # Loads the previous state of branches from a SQLite database.
