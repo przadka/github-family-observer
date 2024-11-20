@@ -258,9 +258,16 @@ def generate_report(new_branches, updated_branches, deleted_branches, rebased_br
             "value": "",
             "inline": False
         }
+        # tracking duplicates for debugging
+        already_rebased_branches = set()
         for branch in rebased_branches:
             if not branch["commits"]:
                 continue
+            if f"{branch['repo_owner']}/{branch['repo_name']}/{branch['branch_name']}" in already_rebased_branches:
+                print("Warning[generate_report]: Duplicate rebased branch detected.")
+                print(f"Warning[generate_report]: Branch already processed: {f"{branch['repo_owner']}/{branch['repo_name']}/{branch['branch_name']}"}")
+            else:
+                already_rebased_branches.add(f"{branch['repo_owner']}/{branch['repo_name']}/{branch['branch_name']}")
             repo_full_name = f"{branch['repo_owner']}/{branch['repo_name']}"
             branch_url = f"https://github.com/{repo_full_name}/tree/{branch['branch_name']}"
             rebased_field["value"] += f"\n* *branch* : [{branch['branch_name']} [{repo_full_name}]]({branch_url})\n"
@@ -321,11 +328,22 @@ def branch_movements(db_dir, git_access_token, main_repo_name, forks):
     merged_without_pr = find_merged_commits_without_pr(main_repo_name, current_state, previous_state, github_client)
 
     merged_commits_without_pr_sha = [commit["sha"] for commit in merged_without_pr]
-    rebased_branches_result = [
-        cur for cur in rebased_branches
-        for commit in cur["commits"]
-        if commit["sha"] not in merged_commits_without_pr_sha
-    ]
+
+    rebased_branches_result = []
+    seen_branches = set()  # set to avoid duplicates: repo_owner/repo_name/branch_name
+
+    for cur in rebased_branches:
+        for commit in cur["commits"]:
+            if commit["sha"] not in merged_commits_without_pr_sha:
+
+                if f"{cur['repo_owner']}/{cur['repo_name']}/{cur['branch_name']}" in seen_branches:
+                    print("Warning[branch_movements]: Duplicate rebased branch detected.")
+                    print(f"Warning[branch_movements]: Branch already processed: {f"{cur['repo_owner']}/{cur['repo_name']}/{cur['branch_name']}"}")
+                else:
+                    seen_branches.add(f"{cur['repo_owner']}/{cur['repo_name']}/{cur['branch_name']}")
+
+                rebased_branches_result.append(cur)
+
     report = generate_report(new_branches, updated_branches, deleted_branches, rebased_branches_result)
 
     merged_commits_without_pr_report = generate_merged_commits_without_pr_report(merged_without_pr)
