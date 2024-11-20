@@ -56,7 +56,6 @@ def fetch_current_repo_state(repo_family, github_client):
 
             if f"{repo.owner.login}/{repo.name}/{branch.name}" not in processed_branches:
                 processed_branches.add(f"{repo.owner.login}/{repo.name}/{branch.name}")
-                print(f"Warning[fetch_current_repo_state]: Processed branch: {f"{repo.owner.login}/{repo.name}/{branch.name}"}")
             else:
                 print("Warning[fetch_current_repo_state]: Duplicate branch detected.")
                 print(f"Warning[fetch_current_repo_state]: Branch already processed: {f"{repo.owner.login}/{repo.name}/{branch.name}"}")
@@ -123,7 +122,6 @@ def compare_states(current_state, previous_state, github_client):
                         "commits": convert_commits(comparison.commits)
                     })
                     if f"{current_branch['repo_owner']}/{current_branch['repo_name']}/{current_branch['branch_name']}" not in already_rebased_branches:
-                        print(f"Warning[compare_states]: Processed rebased branch: {f"{current_branch['repo_owner']}/{current_branch['repo_name']}/{current_branch['branch_name']}"}")
                         already_rebased_branches.add(f"{current_branch['repo_owner']}/{current_branch['repo_name']}/{current_branch['branch_name']}")
                     else:
                         print("Warning[compare_states]: Duplicate rebased branch detected.")
